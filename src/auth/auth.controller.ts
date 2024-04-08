@@ -10,12 +10,12 @@ export class AuthController {
 
     @Post('login')
     login(@Body() authDto: AuthDto){
-        return this.authService.login()
+        return this.authService.login(authDto)
     }
 
     @Post('singin')
-    singin(){
-        return this.authService.singin()
+    singin(@Body() authDto: AuthDto){
+        return this.authService.singin(authDto)
     }
 
 }
