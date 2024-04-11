@@ -1,8 +1,10 @@
-import { ForbiddenException, Injectable } from "@nestjs/common";
+import { ForbiddenException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { AuthDto } from "./dto/auth.dto";
 import { PrismaService } from "src/prisma/prisma.service";
 import { argon2d, argon2i, argon2id } from "argon2";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { JwtService } from "@nestjs/jwt";
+import { access } from "fs";
 const argon2 = require('argon2');
 
 
@@ -10,9 +12,13 @@ const argon2 = require('argon2');
 @Injectable()
 export class AuthService {
 
-constructor(private prisma: PrismaService){}
+constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService
+){}
 
     async login(dto: AuthDto){
+        //this prisma connects to db and gets the user with the email
         const user = this.prisma.user.findFirst({
             where: {
                 email: dto.email
@@ -31,13 +37,16 @@ constructor(private prisma: PrismaService){}
             );
 
             if(!isMatch){
-                throw new ForbiddenException(
-                    'password is incorrect'
-                );
+                throw new UnauthorizedException();
              }
+return {
+    access_token:await this.jwtService.signAsync({
+ sub: (await user).id,
+ email: (await user).email,
+    })
+}
 
 
-return user;
        
     };
 
