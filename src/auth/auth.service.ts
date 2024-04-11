@@ -5,6 +5,7 @@ import { argon2d, argon2i, argon2id } from "argon2";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { JwtService } from "@nestjs/jwt";
 import { access } from "fs";
+import { ConfigService } from "@nestjs/config";
 const argon2 = require('argon2');
 
 
@@ -14,7 +15,8 @@ export class AuthService {
 
 constructor(
     private prisma: PrismaService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    private config:ConfigService
 ){}
 
     async login(dto: AuthDto){
@@ -39,12 +41,7 @@ constructor(
             if(!isMatch){
                 throw new UnauthorizedException();
              }
-return {
-    access_token:await this.jwtService.signAsync({
- sub: (await user).id,
- email: (await user).email,
-    })
-}
+return this.createToken((await user).id,(await user).email)
 
 
        
@@ -76,7 +73,7 @@ try {
         }
     });
 
-    return user;
+    return this.createToken(user.id,user.email)
     
 } catch (error) {
     
@@ -90,9 +87,56 @@ try {
     }
     throw error;
 
-}
-       
+}};
 
 
+
+    async createToken(
+        userId:Number,email:String
+    ):Promise<{acces_token:String}>{
+        
+        const secret_key = this.config.get('JWT_SECRET');
+        const payload ={
+            sub:userId,
+            email,
+        }
+        const token = await this.jwtService.signAsync(
+            payload,
+            {
+                expiresIn:'5m',
+                secret:secret_key,
+            },
+        );
+        
+
+
+    return {
+        acces_token:token,
     };
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
+
+
